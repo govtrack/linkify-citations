@@ -1,57 +1,74 @@
 // Load minified citation.js
 var Citation = require('citation');
 
-var citationToURL = function(citation) {
-  var url = getURLfromCitation(citation)
-  if (url) return "<a class='citation' href='" + url + "'>" + citation.match + "</a>";
-  else return citation.match;
+var whitespaceRegex = /^\s*$/;
+var citationOptions = {links: true};
+
+var linkify = function(document, element) {
+  var snapshot = document.evaluate("//*[local-name(.) != 'script' and local-name(.) != 'style' and local-name(.) != 'a']/text()", element, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+  for (var i = 0; i < snapshot.snapshotLength; i++) {
+    var node = snapshot.snapshotItem(i);
+    var originalText = node.nodeValue;
+    if (whitespaceRegex.test(originalText)) {
+      continue;
+    }
+    var citations = Citation.find(originalText, citationOptions).citations;
+    if (citations.length == 0) {
+      continue;
+    }
+    var parentNode = node.parentNode;
+    var previousMatchEnd = 0;
+    for (var j = 0; j < citations.length; j++) {
+      parentNode.insertBefore(document.createTextNode(originalText.substring(previousMatchEnd, citations[j].index)), node);
+      var url = getURLfromCitation(citations[j]);
+      if (url) {
+        var a = document.createElement("a");
+        a.setAttribute("href", url);
+        a.appendChild(document.createTextNode(citations[j].match));
+        parentNode.insertBefore(a, node);
+      } else {
+        parentNode.insertBefore(document.createTextNode(citations[j].match), node);
+      }
+      var previousMatchEnd = citations[j].index + citations[j].match.length;
+    }
+    var lastCitation = citations[citations.length - 1];
+    parentNode.insertBefore(document.createTextNode(originalText.substring(previousMatchEnd)), node);
+    parentNode.removeChild(node);
+  }
 };
 
-var replaceDOM = function (document) {
-  var thePage = document.documentElement.cloneNode(true);
-  // find the citations
-  var citations = Citation.find(thePage.innerHTML).citations;
-              
-  // loop through each citation
-  for (i = 0; i < citations.length; i++) {
-    // generate a link
-    var link = citationToURL(citations[i]);
-    // stick the link onto the DOM
-    thePage.innerHTML = thePage.innerHTML.replace(citations[i].match, link);
-  }
-  return thePage.innerHTML;  
-}
-
-var getURLfromCitation = function (citation) {
-  var url = "http://api.fdsys.gov/link?collection="
-
+var getURLfromCitation = function(citation) {
   switch (citation.type) {
     case "usc":
-      return url + "uscode&title=" + citation.usc.title + "&year=mostrecent&section=" + citation.usc.section + "&type=usc"
+      return citation.usc.links.usgpo.html;
     case "law":
-      return url + "plaw&congress=" + citation.law.congress + "&lawtype=public&lawnum=" + citation.law.number
+      if (citation.law.links.usgpo) {
+        return citation.law.links.usgpo.html || citation.law.links.usgpo.pdf;
+      } else {
+        return false;
+      }
     case "cfr":
-      return "http://api.fdsys.gov/link?collection=cfr&titlenum=" +
-        citation.cfr.title + "&partnum=" + citation.cfr.part + "&sectionnum="
-        citation.cfr.section + "&year=mostrecent"
+      return citation.cfr.links.usgpo.html;
     case "stat":
-      return url + "statute&volume=" + citation.stat.volume + "&page=" + citation.stat.page
+      if (citation.stat.links.usgpo) {
+        return citation.stat.links.usgpo.html || citation.stat.links.usgpo.pdf;
+      } else {
+        return false;
+      }
     case "fedreg":
-      return url + "fr&volume=" + citation.fedreg.volume + "&page=" + citation.fedreg.page
+      return citation.fedreg.links.usgpo.html;
     default:
       return false;
   }
-}
+};
 
 if (typeof window === 'undefined') {
   module.exports = {
     getURLfromCitation: getURLfromCitation,
-    replaceDOM: replaceDOM,
-    citationToURL: citationToURL
-  }
-}
-else {
+    linkify: linkify
+  };
+} else {
   window.document.addEventListener("DOMContentLoaded", function() {
-    window.document.documentElement.innerHTML = replaceDOM(window.document)
-  })
+    linkify(window.document, window.document.body);
+  });
 }
