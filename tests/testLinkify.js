@@ -62,12 +62,6 @@ test('test getURLfromCitation', function(t) {
     t.equal(URL, 'http://api.fdsys.gov/link?collection=uscode&year=2014&title=5&section=552&type=usc&link-type=html');
 });
 
-test('test citationToURL', function (t){
-    t.plan(1);
-    var link = linkify.citationToURL(testCite);
-    t.equal(link, "<a class='citation' href='http://api.fdsys.gov/link?collection=uscode&title=5&year=mostrecent&section=552&type=usc'>5 U.S.C. 552(a)(1)(E)</a>");
-})
-
 test('test against mock file', function (t){
     t.plan(1);
     var html = fs.readFileSync(__dirname + '/test.html','utf8');
