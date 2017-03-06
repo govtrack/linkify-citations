@@ -38,27 +38,14 @@ var linkify = function(document, element) {
 };
 
 var getURLfromCitation = function(citation) {
-  switch (citation.type) {
-    case "usc":
-      return citation.usc.links.usgpo.html;
-    case "law":
-      if (citation.law.links.usgpo) {
-        return citation.law.links.usgpo.html || citation.law.links.usgpo.pdf;
-      } else {
-        return false;
-      }
-    case "cfr":
-      return citation.cfr.links.usgpo.html;
-    case "stat":
-      if (citation.stat.links.usgpo) {
-        return citation.stat.links.usgpo.html || citation.stat.links.usgpo.pdf;
-      } else {
-        return false;
-      }
-    case "fedreg":
-      return citation.fedreg.links.usgpo.html;
-    default:
-      return false;
+  var links = citation[citation.type].links;
+  if (!links || links.length == 0) {
+    return false;
+  }
+  if (links.usgpo) {
+    return links.usgpo.html || links.usgpo.pdf;
+  } else {
+    return false;
   }
 };
 
