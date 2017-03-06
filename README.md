@@ -20,6 +20,21 @@ var linkify_link_types = ["landing", "pdf", "html"];
 <script src="https://s3.amazonaws.com/linkify-citations/linkify.min.js"></script>
 ```
 
+You can also customize how the links are inserted into the document by defining `linkify_create_link_node` before the main script tag:
+
+```html
+<script>
+var linkify_create_link_node = function(link, citation, text, document) {
+  var a = document.createElement("a");
+  a.setAttribute("class", "citation");
+  a.setAttribute("href", link.url);
+  a.setAttribute("title", link.source.name + (link.note ? (". " + link.note) : ""));
+  a.appendChild(document.createTextNode(text));
+  return a;
+}
+</script>
+```
+
 ## Development/deployment
 
 Pull requests merged into `master` will automatically be deployed to the S3 bucket. To test things out, you might want to try [rawgit](https://rawgit.com).

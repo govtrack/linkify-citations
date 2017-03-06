@@ -5,7 +5,7 @@ var whitespaceRegex = /^\s*$/;
 var citationOptions = {links: true};
 var UNORDERED_NODE_SNAPSHOT_TYPE = 6;
 
-var linkify = function(document, element, allowed_sources, allowed_link_types) {
+var linkify = function(document, element, allowed_sources, allowed_link_types, create_link_func) {
   var snapshot = document.evaluate("//*[local-name(.) != 'script' and local-name(.) != 'style' and local-name(.) != 'a']/text()", element, null, UNORDERED_NODE_SNAPSHOT_TYPE, null);
   for (var i = 0; i < snapshot.snapshotLength; i++) {
     var node = snapshot.snapshotItem(i);
@@ -21,13 +21,12 @@ var linkify = function(document, element, allowed_sources, allowed_link_types) {
     var previousMatchEnd = 0;
     for (var j = 0; j < citations.length; j++) {
       parentNode.insertBefore(document.createTextNode(originalText.substring(previousMatchEnd, citations[j].index)), node);
+      var new_link_node = null;
       var url = getLinkFromCitation(citations[j], allowed_sources, allowed_link_types);
-      if (url) {
-        var a = document.createElement("a");
-        a.setAttribute("class", "citation");
-        a.setAttribute("href", url.url);
-        a.appendChild(document.createTextNode(citations[j].match));
-        parentNode.insertBefore(a, node);
+      if (url)
+        new_link_node = (create_link_func || createLinkNode)(url, citations[j], citations[j].match, document, createLinkNode);
+      if (new_link_node) {
+        parentNode.insertBefore(new_link_node, node);
       } else {
         parentNode.insertBefore(document.createTextNode(citations[j].match), node);
       }
@@ -96,6 +95,14 @@ var getLinkFromCitation = function(citation, allowed_sources, allowed_link_types
   };
 }
 
+function createLinkNode(link, citation, text, document) {
+  var a = document.createElement("a");
+  a.setAttribute("class", "citation");
+  a.setAttribute("href", link.url);
+  a.appendChild(document.createTextNode(text));
+  return a;
+}
+
 if (typeof window === 'undefined') {
   module.exports = {
     getLinkFromCitation: getLinkFromCitation,
@@ -103,6 +110,11 @@ if (typeof window === 'undefined') {
   };
 } else {
   window.document.addEventListener("DOMContentLoaded", function() {
-    linkify(window.document, window.document.body, window.linkify_sources, window.linkify_link_types);
+    linkify(
+      window.document,
+      window.document.body,
+      window.linkify_sources,
+      window.linkify_link_types,
+      window.linkify_create_link_node || createLinkNode);
   });
 }
