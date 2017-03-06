@@ -23,6 +23,7 @@ var linkify = function(document, element) {
       var url = getURLfromCitation(citations[j]);
       if (url) {
         var a = document.createElement("a");
+        a.setAttribute("class", "citation");
         a.setAttribute("href", url);
         a.appendChild(document.createTextNode(citations[j].match));
         parentNode.insertBefore(a, node);
