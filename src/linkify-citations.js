@@ -50,6 +50,8 @@ var getURLfromCitation = function(citation) {
 };
 
 if (typeof window === 'undefined') {
+  XPathResult = require('jsdom').jsdom().defaultView.window.XPathResult;
+
   module.exports = {
     getURLfromCitation: getURLfromCitation,
     linkify: linkify
