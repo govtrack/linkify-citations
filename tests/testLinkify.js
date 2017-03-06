@@ -65,8 +65,10 @@ test('test getURLfromCitation', function(t) {
 test('test against mock file', function (t){
     t.plan(1);
     var html = fs.readFileSync(__dirname + '/test.html','utf8');
-    var dom = linkify.replaceDOM(jsdom.jsdom(html).defaultView.document);
+    var dom = jsdom.jsdom(html);
+    var document = dom.defaultView.document;
+    linkify.linkify(document, document.body);
     var mock = fs.readFileSync(__dirname + '/testLinked.html','utf8');
-    t.equal(dom, mock);
+    t.equal(dom.defaultView.document.documentElement.innerHTML, mock);
     t.end();
 })
