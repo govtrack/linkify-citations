@@ -18011,9 +18011,10 @@ var Citation = require('citation');
 
 var whitespaceRegex = /^\s*$/;
 var citationOptions = {links: true};
+var UNORDERED_NODE_SNAPSHOT_TYPE = 6;
 
 var linkify = function(document, element) {
-  var snapshot = document.evaluate("//*[local-name(.) != 'script' and local-name(.) != 'style' and local-name(.) != 'a']/text()", element, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+  var snapshot = document.evaluate("//*[local-name(.) != 'script' and local-name(.) != 'style' and local-name(.) != 'a']/text()", element, null, UNORDERED_NODE_SNAPSHOT_TYPE, null);
   for (var i = 0; i < snapshot.snapshotLength; i++) {
     var node = snapshot.snapshotItem(i);
     var originalText = node.nodeValue;
@@ -18031,6 +18032,7 @@ var linkify = function(document, element) {
       var url = getURLfromCitation(citations[j]);
       if (url) {
         var a = document.createElement("a");
+        a.setAttribute("class", "citation");
         a.setAttribute("href", url);
         a.appendChild(document.createTextNode(citations[j].match));
         parentNode.insertBefore(a, node);
