@@ -56,10 +56,19 @@ var testCite = {
   }
 };
 
-test('test getURLfromCitation', function(t) {
-    t.plan(1);
-    var URL = linkify.getURLfromCitation(testCite);
-    t.equal(URL, 'http://api.fdsys.gov/link?collection=uscode&year=2014&title=5&section=552&type=usc&link-type=html');
+test('test getLinkFromCitation', function(t) {
+    t.plan(3);
+
+    var URL = linkify.getLinkFromCitation(testCite, ['usgpo'], ['html', 'pdf']);
+    t.equal(URL.url, 'http://api.fdsys.gov/link?collection=uscode&year=2014&title=5&section=552&type=usc&link-type=html');
+
+    // test changing the order of the sources, no page type
+    var URL = linkify.getLinkFromCitation(testCite, ['cornell_lii', 'usgpo']);
+    t.equal(URL.url, 'https://www.law.cornell.edu/uscode/text/5/552#a_1_E');
+
+    // test changing the order of the page types
+    var URL = linkify.getLinkFromCitation(testCite, ['usgpo'], ['landing', 'pdf']);
+    t.equal(URL.url, 'http://api.fdsys.gov/link?collection=uscode&year=2014&title=5&section=552&type=usc&link-type=contentdetail');
 });
 
 test('test against mock file', function (t){
@@ -67,7 +76,8 @@ test('test against mock file', function (t){
     var html = fs.readFileSync(__dirname + '/test.html','utf8');
     var dom = jsdom.jsdom(html);
     var document = dom.defaultView.document;
-    linkify.linkify(document, document.body);
+    linkify.linkify(document, document.body, ['usgpo'], ['html', 'pdf']);
+    fs.writeFileSync(__dirname + '/testLinkedSaved.html', dom.defaultView.document.documentElement.innerHTML, 'utf8');
     var mock = fs.readFileSync(__dirname + '/testLinked.html','utf8');
     t.equal(dom.defaultView.document.documentElement.innerHTML, mock);
     t.end();
