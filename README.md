@@ -10,29 +10,61 @@ Scans the DOM for legal citations, finds them, and turns them into HTML links.
 
 ## Advanced Usage
 
-You can control which websites you allow linking to and which page types (web pages, PDFs, and raw HTML) you allow links to by setting optional variables ahead of the script load. The variables specify the allowed websites (`linkify_sources`, see the `id` attribute in the [modules at citation/links](https://github.com/unitedstates/citation/tree/master/links)) and the allowed page types (`linkify_link_types`) in preference order, from most preferred to least preferred.
+You can control where on the page links are inserted, which websites you allow linking to, which page types (web pages, PDFs, and raw HTML) you allow links to, and how the link `<a>` elements are created by turning off automatic linking and calling the linking function directly.
+
+Here's a simple example assuming you are using jQuery:
 
 ```html
 <script>
-var linkify_sources = ["usgpo", "house", "nara", "libraryofcongress", "dc_council", "cornell_lii", "legislink", "govtrack", "courtlistener", "vadecoded"];
-var linkify_link_types = ["landing", "pdf", "html"];
+// disable the automatic linking of citations
+auto_linkify_citations = false;
+
+window.document.addEventListener("DOMContentLoaded", function() {
+  linkify_citations(
+    $("#content")[0],
+    ["usgpo", "libraryofcongress"]
+    );
+});
 </script>
+
+// load the library
 <script src="https://s3.amazonaws.com/linkify-citations/linkify.min.js"></script>
 ```
 
-You can also customize how the links are inserted into the document by defining `linkify_create_link_node` before the main script tag:
+The arguments to `linkify_citations` are all optional. They are:
+
+* The DOM element within which to replace links.
+* An array of allowed link targets, in order of preference. The default is the complete list of targets provided by the citation library and preferring links to authoritative sources. The values in this array come from the `id` attribute of the [linker modules in the citation library](https://github.com/unitedstates/citation/tree/master/links).
+* An array of allowed link page types, in order of preference. The default is `["landing", "pdf", "html"]`. See the documentation for [link rendition types](https://github.com/unitedstates/citation#include-links).
+* A function that creates `<a>` elements for the inserted links (see below for example).
+
+Here's a complete example showing the default arguments explicity:
 
 ```html
 <script>
-var linkify_create_link_node = function(link, citation, text, document) {
-  var a = document.createElement("a");
-  a.setAttribute("class", "citation");
-  a.setAttribute("href", link.url);
-  a.setAttribute("title", link.source.name + (link.note ? (". " + link.note) : ""));
-  a.appendChild(document.createTextNode(text));
-  return a;
-}
+// disable the automatic linking of citations
+auto_linkify_citations = false;
+
+window.document.addEventListener("DOMContentLoaded", function() {
+  linkify_citations(
+    window.document.body, // where to replace links
+    ["usgpo", "house", "nara", "libraryofcongress", "dc_council",
+     "cornell_lii", "legislink", "govtrack", "courtlistener",
+     "vadecoded"], // targets to allow, in preference order
+    ["landing", "pdf", "html"], // allowed target types
+    function(link, citation, text, document) { // function to create links
+      var a = document.createElement("a");
+      a.setAttribute("class", "citation");
+      a.setAttribute("href", link.url);
+      a.appendChild(document.createTextNode(text));
+      return a;
+    }
+  );
+});
 </script>
+
+// load the library
+<script src="https://s3.amazonaws.com/linkify-citations/linkify.min.js"></script>
 ```
 
 ## Development/deployment

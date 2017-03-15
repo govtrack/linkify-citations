@@ -104,17 +104,30 @@ function createLinkNode(link, citation, text, document) {
 }
 
 if (typeof window === 'undefined') {
+  // We're being used within Node. Export the funtions.
   module.exports = {
     getLinkFromCitation: getLinkFromCitation,
     linkify: linkify
   };
-} else {
+
+} else if (window.auto_linkify_citations !== false) {
+  // We're in a browser and the auto_linkify_citations flag has not been
+  // set to false, so run the main function automatically with default
+  // arguments when the DOM is loaded.
   window.document.addEventListener("DOMContentLoaded", function() {
-    linkify(
-      window.document,
-      window.document.body,
-      window.linkify_sources,
-      window.linkify_link_types,
-      window.linkify_create_link_node || createLinkNode);
+    linkify(window.document, window.document.body);
   });
+
+} else {
+  // We're in a browser and the auto_linkify_citations flag has been set
+  // to false, so we make the main function globally available and let
+  // the page call it itself.
+  //
+  // Curry the linkify function - we can get a reference to the document
+  // and don't need it to be an argument. Provide a default for the element
+  // too so that a call with no args behaves the same as when auto_linkify_citations
+  // is not set to false.
+  window.linkify_citations = function(element, allowed_sources, allowed_link_types, create_link_func) {
+    return linkify(window.document, element || window.document.body, allowed_sources, allowed_link_types, create_link_func);
+  }
 }
